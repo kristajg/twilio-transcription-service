@@ -1,12 +1,16 @@
-import logo from './logo.svg';
+require('dotenv').config();
+
+/*eslint-disable */
+import ReactMicComponent from './components/ReactMicComponent';
 import './App.css';
+/*eslint-enable */
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        Project goes here
-
+        Owlapaloozin'
+        <ReactMicComponent />
       </header>
     </div>
   );

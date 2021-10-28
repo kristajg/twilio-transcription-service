@@ -1,11 +1,14 @@
 require('dotenv').config();
 
 // 3rd party libraries
+/*eslint-disable */
 import http from 'http';
-import path from 'path';
+import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import WebSocket, { WebSocketServer } from 'ws';
+import { AwsTranscribe, StreamingClient, TranscriptEvent } from 'aws-transcribe';
+/*eslint-enable */
 
 // Helpers
 // import { createS3Bucket, uploadFileToS3Bucket } from './utils/awsHelpers';
@@ -14,17 +17,20 @@ import WebSocket, { WebSocketServer } from 'ws';
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 
-const client = require('twilio')(accountSid, authToken);
+const twilioClient = require('twilio')(accountSid, authToken);
+
+const awsClient = new AwsTranscribe({
+  // if these aren't provided, they will be taken from the environment
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_ACCESS_KEY,
+});
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
-
-// NOTE TO SELF: could run express server separate from websocket server
-// (maybe i should? will do it if it becomes necessary)
 
 // Create express server
 const server = http.createServer(app).listen(8089, () => {
@@ -34,29 +40,28 @@ const server = http.createServer(app).listen(8089, () => {
 // Initialize server with websockets
 const wss = new WebSocket.Server({ server });
 
-
-
 wss.on('connection', function connection(ws) {
   console.log('New ws connection initiated');
 
   ws.on('message', function incoming(message) {
-    const msg = JSON.parse(message);
-    switch (msg.event) {
-      case 'connected':
-        console.log(`A new call has connected.`);
-        break;
-      case 'start':
-        console.log(`Starting Media Stream ${msg.streamSid}`);
-        break;
-      case 'media':
-        console.log(`Receiving Audio...`)
-        break;
-      case 'stop':
-        console.log(`Call Has Ended`);
-        break;
-      default:
-        break;
-    }
+    console.log('message is ', message);
+    // const msg = JSON.parse(message);
+    // switch (msg.event) {
+    //   case 'connected':
+    //     console.log(`A new call has connected.`);
+    //     break;
+    //   case 'start':
+    //     console.log(`Starting Media Stream ${msg.streamSid}`);
+    //     break;
+    //   case 'media':
+    //     console.log(`Receiving Audio...`)
+    //     break;
+    //   case 'stop':
+    //     console.log(`Call Has Ended`);
+    //     break;
+    //   default:
+    //     break;
+    // }
   });
 });
 
@@ -71,81 +76,12 @@ wss.on('connection', function connection(ws) {
 
 // App routes
 app.get('/', (req, res) => {
-  // res.send('It works');
-  res.sendFile(path.join(__dirname, '/index.html'));
-});
-
-app.post('/test-websocket-transcribe', (req, res) => {
   res.send('It works');
-  client.voice.response()
 });
 
-
-
-// AWS.config.getCredentials(err => {
-//   if (err) console.log(err.stack);
-//   // credentials not loaded
-//   else {
-//     console.log('Access key: ', AWS.config.credentials.accessKeyId);
-//   }
-// });
-
-// // Create unique bucket name
-// const bucketName = 'kg-node-sdk-sample-' + uuidv4();
-// // Create name for uploaded object key
-// const keyName = 'hello_world.txt';
-
-// // Create a promise on S3 service object
-// const bucketPromise =
-//   // new AWS.S3({ apiVersion: '2006-03-01' })
-//   new AWS.S3()
-//     .createBucket({ Bucket: bucketName })
-//     .promise();
-
-// bucketPromise.then(data => {
-//   // Create params for putObject call
-//   const objectParams = {
-//     Bucket: bucketName,
-//     Key: keyName,
-//     Body: 'Hello World!',
-//   };
-
-//   // Create object upload promise
-//   // const uploadPromise = new AWS.S3({apiVersion: '2006-03-01'}).putObject(objectParams).promise();
-//   const uploadPromise = new AWS.S3().putObject(objectParams).promise();
-
-//   uploadPromise.then(data => {
-//     console.log('data be like ', data);
-//     console.log('Successfully uploaded data to ' + bucketName + '/' + keyName);
-//   });
-// }).catch(err => {
-//   console.error(err, err.stack);
-// });
-
-
-
-
-
-
-
-
-
-// import  { TranscribeClient }  from  "@aws-sdk/client-transcribe";
-// // Set the AWS Region.
-// const REGION = "REGION"; //e.g. "us-east-1"
-// // Create Transcribe service object.
-// const transcribeClient = new TranscribeClient({ region: REGION });
-// export { transcribeClient };
-
-
-// STREAMING EXAMPLE
-// // ES5 example
-// const {
-//   TranscribeStreamingClient,
-//   StartMedicalStreamTranscriptionCommand,
-// } = require("@aws-sdk/client-transcribe-streaming");
-// // ES6+ example
-// import {
-//   TranscribeStreamingClient,
-//   StartMedicalStreamTranscriptionCommand,
-// } from "@aws-sdk/client-transcribe-streaming";
+app.post('/transcribe-audio', (req, res) => {
+  console.log('Transcribe audio endpoint hit ', req.body);
+  console.log('Transcribe audio endpoint hit?? ', req.body.blob);
+  res.send('transcribe audio');
+  // TODO: rest of service
+});
