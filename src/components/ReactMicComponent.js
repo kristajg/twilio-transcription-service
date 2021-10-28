@@ -1,5 +1,9 @@
+// 3rd party libs
 import React, { Component } from 'react';
 import { ReactMic } from 'react-mic';
+
+// helpers
+import { sendAudioToService } from '../helpers/apiHelpers';
 
 export default class ReactMicComponent extends Component {
   state = {
@@ -20,6 +24,7 @@ export default class ReactMicComponent extends Component {
 
   onStop(recordedBlob) {
     console.log('recordedBlob is: ', recordedBlob);
+    sendAudioToService(recordedBlob);
   }
 
 

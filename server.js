@@ -71,13 +71,12 @@ wss.on('connection', function connection(ws) {
 
 // App routes
 app.get('/', (req, res) => {
-  // res.send('It works');
-  res.sendFile(path.join(__dirname, '/index.html'));
+  res.send('It works');
 });
 
-app.post('/test-websocket-transcribe', (req, res) => {
-  res.send('It works');
-  client.voice.response()
+app.post('/transcribe-audio', (req, res) => {
+  res.send('transcribe audio');
+  // client.voice.response()
 });
 
 
