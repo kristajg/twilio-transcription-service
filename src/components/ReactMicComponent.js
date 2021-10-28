@@ -5,9 +5,22 @@ import { ReactMic } from 'react-mic';
 // helpers
 import { sendAudioToService } from '../helpers/apiHelpers';
 
+// creating WebSocket connection
+let connection = new WebSocket('ws://localhost:8089');
+
 export default class ReactMicComponent extends Component {
   state = {
     record: false,
+  }
+
+  componentDidMount() {
+    connection.onopen = () => {
+      console.log('connection was opened');
+    };
+
+    connection.onmessage = e => {
+      console.log('e on message ', e);
+    };
   }
 
   startRecording = () => {
@@ -20,11 +33,16 @@ export default class ReactMicComponent extends Component {
 
   onData(recordedBlob) {
     console.log('chunk of real-time data is: ', recordedBlob);
+    connection.send(recordedBlob);
+
+    // connection.send(recordedBlob);
+    return recordedBlob;
   }
 
   onStop(recordedBlob) {
     console.log('recordedBlob is: ', recordedBlob);
-    sendAudioToService(recordedBlob);
+    // connection.send(recordedBlob);
+    // sendAudioToService(recordedBlob);
   }
 
 
