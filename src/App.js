@@ -1,12 +1,13 @@
-import logo from './logo.svg';
+
+import ReactMicComponent from './components/ReactMicComponent';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        Project goes here
-
+        Owlapaloozin'
+        <ReactMicComponent />
       </header>
     </div>
   );
