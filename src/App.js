@@ -1,6 +1,9 @@
+require('dotenv').config();
 
+/*eslint-disable */
 import ReactMicComponent from './components/ReactMicComponent';
 import './App.css';
+/*eslint-enable */
 
 function App() {
   return (

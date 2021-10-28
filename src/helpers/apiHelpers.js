@@ -4,7 +4,7 @@ export const sendAudioToService = async (audioObject = {}) => {
   console.log('Send to audio service ', audioObject);
   let data;
   await superagent
-    .post('/transcribe-audio')
+    .post(`${process.env.REACT_APP_SERVER_PREFIX}/transcribe-audio`)
     .send(audioObject)
     .set('Accept', 'application/json')
     .then(res => {

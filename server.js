@@ -1,11 +1,13 @@
 require('dotenv').config();
 
 // 3rd party libraries
+/*eslint-disable */
 import http from 'http';
-import path from 'path';
+import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import WebSocket, { WebSocketServer } from 'ws';
+/*eslint-enable */
 
 // Helpers
 // import { createS3Bucket, uploadFileToS3Bucket } from './utils/awsHelpers';
@@ -18,6 +20,7 @@ const client = require('twilio')(accountSid, authToken);
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -75,6 +78,7 @@ app.get('/', (req, res) => {
 });
 
 app.post('/transcribe-audio', (req, res) => {
+  console.log('Transcribe audio endpoint hit');
   res.send('transcribe audio');
   // client.voice.response()
 });
