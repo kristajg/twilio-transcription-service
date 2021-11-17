@@ -1,35 +1,51 @@
-import { AwsTranscribe, StreamingClient, TranscriptEvent } from 'aws-transcribe';
+require('dotenv').config();
 
-const awsClient = new AwsTranscribe({
-  // if these aren't provided, they will be taken from the environment
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_ACCESS_KEY,
-});
+// eslint-disable-next-line import/first
+import { TranscribeStreamingClient, StartStreamTranscriptionCommand } from '@aws-sdk/client-transcribe-streaming';
 
-const transcribeStream = awsClient
-    .createStreamingClient({
-        region: 'us-east-1',
-        sampleRate: 16000,
-        languageCode: 'en-US',
+// Finds keys in credentials file ~/.aws/credentials
+const awsClient = new TranscribeStreamingClient({ region: 'us-east-1' });
+
+// Params for StartStreamTranscriptionCommand are found here:
+// https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-transcribe-streaming/interfaces/startstreamtranscriptioncommandinput.html
+let baseParams = {
+  LanguageCode: 'en-US',
+  MediaEncoding: 'pcm',
+  MediaSampleRateHertz: 44100, // The sample rate for the input audio stream. Use 8,000 Hz for low quality audio and 16,000 Hz for high quality audio.
+};
+
+const getTranscriptedData = async (TranscriptResultStream) => {
+  const transcripts = [];
+  for await (const event of TranscriptResultStream) {
+    console.log('event is ', event);
+    transcripts.push(event);
+  }
+  // return transcripts;
+}
+
+export const generateNewTranscription = async (audio) => {
+  let params = {
+    ...baseParams,
+    // AudioStream: audio,
+    AudioStream: (async function* () {
+      for await (const chunk of audio) {
+        // console.log('hey ', chunk);
+        yield { AudioEvent: { AudioChunk: chunk } };
+      }
+    })()
+  };
+
+  const command = new StartStreamTranscriptionCommand(params);
+
+  await awsClient.send(command)
+    .then(dataTime => {
+      // Response looks like this:
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-transcribe-streaming/interfaces/startstreamtranscriptioncommandoutput.html
+      // console.log('data time! ', dataTime);
+      getTranscriptedData(dataTime.TranscriptResultStream);
     })
-    // enums for returning the event names which the stream will emit
-    .on(StreamingClient.EVENTS.OPEN, () => console.log(`transcribe connection opened`))
-    .on(StreamingClient.EVENTS.ERROR, console.error)
-    .on(StreamingClient.EVENTS.CLOSE, () => console.log(`transcribe connection closed`))
-    .on(StreamingClient.EVENTS.DATA, (data) => {
-        const results = data.Transcript.Results
+    .catch(err => {
+      console.log('tehre was an err ', err);
+    });
 
-        if (!results || results.length === 0) {
-          return
-        }
-        console.log('results 1 ', results);
-
-        const result = results[0];
-        console.log('results 2 ', result);
-        const final = !result.IsPartial
-        const prefix = final ? "recognized" : "recognizing"
-        const text = result.Alternatives[0].Transcript
-        console.log(`${prefix} text: ${text}`)
-    })
-
-// yourStream.pipe(transcribeStream)
+};

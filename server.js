@@ -3,27 +3,16 @@ require('dotenv').config();
 // 3rd party libraries
 /*eslint-disable */
 import http from 'http';
+import { Readable } from 'stream';
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
-import WebSocket, { WebSocketServer } from 'ws';
-import { AwsTranscribe, StreamingClient, TranscriptEvent } from 'aws-transcribe';
+import WebSocket from 'ws';
 /*eslint-enable */
 
 // Helpers
-// import { createS3Bucket, uploadFileToS3Bucket } from './utils/awsHelpers';
-
-// constants
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-
-const twilioClient = require('twilio')(accountSid, authToken);
-
-const awsClient = new AwsTranscribe({
-  // if these aren't provided, they will be taken from the environment
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_ACCESS_KEY,
-});
+// eslint-disable-next-line import/first
+import { generateNewTranscription } from './awstest';
 
 const app = express();
 
@@ -42,9 +31,11 @@ const wss = new WebSocket.Server({ server });
 
 wss.on('connection', function connection(ws) {
   console.log('New ws connection initiated');
-
   ws.on('message', function incoming(message) {
+    const stream = Readable.from(message);
     console.log('message is ', message);
+    generateNewTranscription(stream);
+
     // const msg = JSON.parse(message);
     // switch (msg.event) {
     //   case 'connected':
@@ -81,7 +72,5 @@ app.get('/', (req, res) => {
 
 app.post('/transcribe-audio', (req, res) => {
   console.log('Transcribe audio endpoint hit ', req.body);
-  console.log('Transcribe audio endpoint hit?? ', req.body.blob);
   res.send('transcribe audio');
-  // TODO: rest of service
 });

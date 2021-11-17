@@ -33,10 +33,14 @@ export default class ReactMicComponent extends Component {
 
   onData(recordedBlob) {
     console.log('chunk of real-time data is: ', recordedBlob);
+
+    // Websocket send
     connection.send(recordedBlob);
 
-    // connection.send(recordedBlob);
-    return recordedBlob;
+    // Server POST
+    // sendAudioToService(recordedBlob);
+
+    // return recordedBlob;
   }
 
   onStop(recordedBlob) {
@@ -56,6 +60,7 @@ export default class ReactMicComponent extends Component {
           onData={this.onData}
           strokeColor="#000000"
           backgroundColor="#FF4081" />
+        <br />
         <button onClick={this.startRecording} type="button">Start</button>
         <button onClick={this.stopRecording} type="button">Stop</button>
       </div>
