@@ -1,16 +1,20 @@
 // 3rd party libs
 import React, { Component } from 'react';
-import { ReactMic } from 'react-mic';
+import getUserMedia from 'get-user-media-promise';
+import MicrophoneStream from 'microphone-stream';
 
 // helpers
-import { sendAudioToService } from '../helpers/apiHelpers';
+// eslint-disable-next-line import/first
+// import { sendAudioToService } from '../helpers/apiHelpers';
 
 // creating WebSocket connection
 let connection = new WebSocket('ws://localhost:8089');
 
+let inputSampleRate;
+
 export default class ReactMicComponent extends Component {
   state = {
-    record: false,
+    micStream: null, // TODO: maybe make this a global
   }
 
   componentDidMount() {
@@ -18,51 +22,78 @@ export default class ReactMicComponent extends Component {
       console.log('connection was opened');
     };
 
-    connection.onmessage = e => {
-      console.log('e on message ', e);
-    };
+    // connection.onmessage = e => {
+    //   console.log('e on message ', e);
+    // };
   }
 
-  startRecording = () => {
-    this.setState({ record: true });
+  streamAudioToWebsocket = (stream) => {
+    this.setState({
+      micStream: new MicrophoneStream(),
+    });
+    const { micStream } = this.state;
+
+    micStream.setStream(stream);
+
+
+    micStream.on('format', data => {
+      console.log('Format hit ', data);
+      inputSampleRate = data.sampleRate;
+    });
+
+    micStream.on('data', chunk => {
+      // Optionally convert the Buffer back into a Float32Array
+      // (This actually just creates a new DataView - the underlying audio data is not copied or modified.)
+      const raw = MicrophoneStream.toRaw(chunk);
+      // console.log('raw? ', raw);
+      connection.send(raw);
+      // note: if you set options.objectMode=true, the `data` event will output AudioBuffers instead of Buffers
+    });
   }
 
-  stopRecording = () => {
-    this.setState({ record: false });
+  startMicStream = () => {
+    getUserMedia({ video: false, audio: true })
+      .then(stream => {
+        console.log('stream is ', stream);
+        // This function sends stream to AWS websocket
+        let thing = this.streamAudioToWebsocket(stream);
+        console.log('thing ', thing);
+      }).catch(function(error) {
+        console.log(error);
+      });
+    
+    // // get Buffers (Essentially a Uint8Array DataView of the same Float32 values)
+    // micStream.on('data', function(chunk) {
+    //   // Optionally convert the Buffer back into a Float32Array
+    //   // (This actually just creates a new DataView - the underlying audio data is not copied or modified.)
+    //   const raw = MicrophoneStream.toRaw(chunk)
+    //   //...
+
+    //   // note: if you set options.objectMode=true, the `data` event will output AudioBuffers instead of Buffers
+    // });
+
+    // // or pipe it to another stream
+    // micStream.pipe(/*...*/);
+
+    // // Access the internal audioInput for connecting to another nodes
+    // micStream.audioInput.connect(/*...*/));
+
+    // // It also emits a format event with various details (frequency, channels, etc)
+    // micStream.on('format', function(format) {
+    //   console.log(format);
+    // });
   }
 
-  onData(recordedBlob) {
-    console.log('chunk of real-time data is: ', recordedBlob);
-
-    // Websocket send
-    connection.send(recordedBlob);
-
-    // Server POST
-    // sendAudioToService(recordedBlob);
-
-    // return recordedBlob;
+  stopMicStream = () => {
+    const { micStream } = this.state;
+    micStream.stop();
   }
-
-  onStop(recordedBlob) {
-    console.log('recordedBlob is: ', recordedBlob);
-    // connection.send(recordedBlob);
-    // sendAudioToService(recordedBlob);
-  }
-
 
   render() {
     return (
       <div>
-        <ReactMic
-          record={this.state.record}
-          className="sound-wave"
-          onStop={this.onStop}
-          onData={this.onData}
-          strokeColor="#000000"
-          backgroundColor="#FF4081" />
-        <br />
-        <button onClick={this.startRecording} type="button">Start</button>
-        <button onClick={this.stopRecording} type="button">Stop</button>
+        <button onClick={this.startMicStream} type="button">Clicky Mic START</button>
+        <button onClick={this.stopMicStream} type="button">Clicky Mic STOP</button>
       </div>
     );
   }

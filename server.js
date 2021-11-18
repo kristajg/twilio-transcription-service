@@ -32,9 +32,10 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', function connection(ws) {
   console.log('New ws connection initiated');
   ws.on('message', function incoming(message) {
-    const stream = Readable.from(message);
-    console.log('message is ', message);
-    generateNewTranscription(stream);
+    console.log('message? ', message);
+    // const stream = Readable.from(message);
+    // console.log('message is ', message);
+    generateNewTranscription(message);
 
     // const msg = JSON.parse(message);
     // switch (msg.event) {

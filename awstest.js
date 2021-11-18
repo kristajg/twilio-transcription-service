@@ -26,13 +26,14 @@ const getTranscriptedData = async (TranscriptResultStream) => {
 export const generateNewTranscription = async (audio) => {
   let params = {
     ...baseParams,
-    // AudioStream: audio,
-    AudioStream: (async function* () {
-      for await (const chunk of audio) {
-        // console.log('hey ', chunk);
-        yield { AudioEvent: { AudioChunk: chunk } };
-      }
-    })()
+    // AudioStream: PCM-encoded stream of audio blobs. The audio stream is encoded as an HTTP/2 data frame.
+    AudioStream: audio,
+    // AudioStream: (async function* () {
+    //   for await (const chunk of audio) {
+    //     // console.log('hey ', chunk);
+    //     yield { AudioEvent: { AudioChunk: chunk } };
+    //   }
+    // })()
   };
 
   const command = new StartStreamTranscriptionCommand(params);
@@ -41,7 +42,7 @@ export const generateNewTranscription = async (audio) => {
     .then(dataTime => {
       // Response looks like this:
       // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-transcribe-streaming/interfaces/startstreamtranscriptioncommandoutput.html
-      // console.log('data time! ', dataTime);
+      console.log('data time! ', dataTime);
       getTranscriptedData(dataTime.TranscriptResultStream);
     })
     .catch(err => {
