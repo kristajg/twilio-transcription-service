@@ -9,7 +9,10 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        Owlapaloozin'
+        <div>
+          AWS Transcription Service
+        </div>
+        <br />
         <ReactMicComponent />
       </header>
     </div>
