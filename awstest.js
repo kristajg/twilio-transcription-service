@@ -12,41 +12,46 @@ let baseParams = {
   LanguageCode: 'en-US',
   MediaEncoding: 'pcm',
   MediaSampleRateHertz: 44100, // The sample rate for the input audio stream. Use 8,000 Hz for low quality audio and 16,000 Hz for high quality audio.
+  // EnablePartialResultsStabilization: true, // This reduces latency, good for subtitles
 };
 
 const getTranscriptedData = async (TranscriptResultStream) => {
   const transcripts = [];
-  for await (const event of TranscriptResultStream) {
+  for await (let event of TranscriptResultStream) {
     console.log('event is ', event);
     transcripts.push(event);
   }
-  // return transcripts;
+  console.log('transcripts? ', transcripts);
+  return transcripts;
 }
 
-export const generateNewTranscription = async (audio) => {
+export const generateNewTranscription = async (audioStream) => {
   let params = {
     ...baseParams,
     // AudioStream: PCM-encoded stream of audio blobs. The audio stream is encoded as an HTTP/2 data frame.
-    AudioStream: audio,
-    // AudioStream: (async function* () {
-    //   for await (const chunk of audio) {
-    //     // console.log('hey ', chunk);
-    //     yield { AudioEvent: { AudioChunk: chunk } };
-    //   }
-    // })()
+    AudioStream: (async function* () {
+      for await (const chunk of audioStream) {
+        if (chunk && chunk.length) {
+          // AudioEvent: The maximum audio chunk size is 32 KB
+          yield { AudioEvent: { AudioChunk: chunk } };
+        } else {
+          console.log('Empty chunk ', chunk)
+        }
+      }
+    })()
   };
 
   const command = new StartStreamTranscriptionCommand(params);
 
   await awsClient.send(command)
     .then(dataTime => {
-      // Response looks like this:
+      // Response docs:
       // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-transcribe-streaming/interfaces/startstreamtranscriptioncommandoutput.html
-      console.log('data time! ', dataTime);
-      getTranscriptedData(dataTime.TranscriptResultStream);
+      // console.log('AWS DATA RESPONSE ', dataTime);
+      let finalTranscription = getTranscriptedData(dataTime.TranscriptResultStream);
+      console.log('Final transcription ', finalTranscription);
     })
     .catch(err => {
-      console.log('tehre was an err ', err);
+      console.log('Error with transcription service ', err);
     });
-
 };
