@@ -47,6 +47,7 @@ const ButtonItem = styled.div`
 const RecordingStatusContainer = styled.div`
   padding-top: 20px;
   font-size: 18px;
+  font-style: italic;
   color: lightgray;
 `;
 
@@ -73,11 +74,8 @@ export default class ReactMicComponent extends Component {
 
   handleEventStreamMessage = messageJson => {
     let results = messageJson.Transcript.Results;
-    console.log('Results!!! ', results);
-
     if (results.length > 0) {
       if (results[0].Alternatives.length > 0) {
-
         // Make shallow clone of current results
         const { transcriptionResults } = this.state;
         let newResults = transcriptionResults;
@@ -95,7 +93,6 @@ export default class ReactMicComponent extends Component {
           console.log('its partial... ');
           // //scroll the textarea down
           // $('#transcript').scrollTop($('#transcript')[0].scrollHeight);
-
           // transcription += transcript + "\n";
         }
         this.setState({ transcriptionResults: newResults });
