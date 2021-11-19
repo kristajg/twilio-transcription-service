@@ -22,14 +22,19 @@ const client = new TranscribeStreamingClient({
   credentials: {
     accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.REACT_APP_AWS_ACCESS_KEY,
-    // sessionToken: '', // Do i need this??? think its option, according to sdk docs 71c90d2f-b395-422d-a3f7-f270f0fdc4e4
   },
   region: 'us-east-1',
-  maxAttempts: 5,
+  // maxAttempts: 5,
 });
 
 // creating WebSocket connection
 // let connection = new WebSocket('ws://localhost:8089');
+
+
+const TextAreaContainer = styled.textarea`
+  width: 100%;
+  height: 200px;
+`;
 
 const ButtonContainer = styled.div`
   display: inline-flex;
@@ -40,8 +45,9 @@ const ButtonItem = styled.div`
 `;
 
 const RecordingStatusContainer = styled.div`
-  font-size: 24px;
-  color: skyblue;
+  padding-top: 20px;
+  font-size: 18px;
+  color: lightgray;
 `;
 
 const StatusHeader = styled.span`
@@ -52,12 +58,11 @@ const buttonStyles = {
   width: '180px',
 };
 
-
 export default class ReactMicComponent extends Component {
   state = {
     micStream: null,
     recording: false,
-    transcriptionResults: {},
+    transcriptionResults: '',
   }
 
   // componentDidMount() {
@@ -68,23 +73,40 @@ export default class ReactMicComponent extends Component {
 
   handleEventStreamMessage = messageJson => {
     let results = messageJson.Transcript.Results;
-    console.log('Results!!!!! ', results);
-    this.setState({ transcriptionResults: results });
-    return results;
+    console.log('Results!!! ', results);
+
+    if (results.length > 0) {
+      if (results[0].Alternatives.length > 0) {
+
+        // Make shallow clone of current results
+        const { transcriptionResults } = this.state;
+        let newResults = transcriptionResults;
+
+        let transcript = results[0].Alternatives[0].Transcript;
+
+        // fix encoding for accented characters
+        transcript = decodeURIComponent(escape(transcript));
+
+        // update the textarea with the latest result
+        newResults = transcript;
+
+        // if this transcript segment is final, add it to the overall transcription
+        if (!results[0].IsPartial) {
+          console.log('its partial... ');
+          // //scroll the textarea down
+          // $('#transcript').scrollTop($('#transcript')[0].scrollHeight);
+
+          // transcription += transcript + "\n";
+        }
+        this.setState({ transcriptionResults: newResults });
+      }
+    }
   }
 
   streamAudioToWebsocket = async (audioStream) => {
     let micStream = new MicrophoneStream();
     this.setState({ micStream });
-
-    // Get mic input sample rate
-    // micStream.on('format', data => {
-    //   inputSampleRate = data.sampleRate;
-    // });
-
     micStream.setStream(audioStream);
-
-    // const raw = MicrophoneStream.toRaw(chunk)
 
     const transcribeInput = async function* () {
       for await(const chunk of micStream) {
@@ -120,43 +142,37 @@ export default class ReactMicComponent extends Component {
   startMicStream = async () => {
     this.setState({ recording: true });
 
-    try {
-    // first we get the microphone input from the browser (as a promise)...
-    const media = await window.navigator.mediaDevices.getUserMedia({
-      video: false,
-      audio: true
-    });
-    // ...then we convert the mic stream to binary event stream messages when the promise resolves 
-    await this.streamAudioToWebsocket(media);
-  } catch (error) {
-    console.error('Error occurred: ', error);
-  }
+  //   try {
+  //   // first we get the microphone input from the browser (as a promise)...
+  //   const media = await window.navigator.mediaDevices.getUserMedia({
+  //     video: false,
+  //     audio: true
+  //   });
+  //   // ...then we convert the mic stream to binary event stream messages when the promise resolves 
+  //   await this.streamAudioToWebsocket(media);
+  // } catch (error) {
+  //   console.error('Error occurred: ', error);
+  // }
 
-    // await getUserMedia({ video: false, audio: true })
-    //   .then(async audioStream => {
-    //     this.setState({ recording: true });
-    //     await this.streamAudioToWebsocket(audioStream);
-    //   })
-    //   .catch(error => {
-    //     console.log('Error getting user media: ', error);
-    //   });
-
-
-
-
+    getUserMedia({ video: false, audio: true })
+      .then(async audioStream => {
+        this.setState({ recording: true });
+        await this.streamAudioToWebsocket(audioStream);
+      })
+      .catch(error => {
+        console.log('Error getting user media: ', error);
+      });
   }
 
 
   render() {
+    console.log('transcription results ', this.state.transcriptionResults);
     return (
       <div>
-        {/* {this.state.transcriptionResults ? <div>{this.state.transcriptionResults}</div> : ''} */}
-        <RecordingStatusContainer>
-          <StatusHeader>
-            Status:{' '}
-          </StatusHeader>
-          {this.state.recording ? 'Recording in progress...' : 'Ready to record'}
-        </RecordingStatusContainer>
+        <TextAreaContainer
+          defaultValue={this.state.transcriptionResults ? this.state.transcriptionResults : ''}
+          />
+        <br />
         <br />
         <ButtonContainer>
           <ButtonItem>
@@ -166,6 +182,13 @@ export default class ReactMicComponent extends Component {
             <Button onClick={this.stopMicStream} styles={buttonStyles}>Clicky Mic STOP</Button>
           </ButtonItem>
         </ButtonContainer>
+        <br />
+        <RecordingStatusContainer>
+          <StatusHeader>
+            Status:{' '}
+          </StatusHeader>
+          {this.state.recording ? 'Recording in progress...' : 'Ready to record'}
+        </RecordingStatusContainer>
       </div>
     );
   }
