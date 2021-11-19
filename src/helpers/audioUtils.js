@@ -1,5 +1,14 @@
-// Credit goes to: https://github.com/amazon-archives/amazon-transcribe-websocket-static/blob/master/lib/audioUtils.js
+export const pcmEncodeChunk = (audioChunk, micStream) => {
+  const raw = micStream.toRaw(audioChunk)
+  if (raw == null) return;
+  let pcmEncodedBuffer = pcmEncode(raw);
+  return Buffer.from(pcmEncodedBuffer);
+}
 
+
+
+
+// Credit goes to: https://github.com/amazon-archives/amazon-transcribe-websocket-static/blob/master/lib/audioUtils.js
 export const pcmEncode = input => {
   let offset = 0;
   let buffer = new ArrayBuffer(input.length * 2);
