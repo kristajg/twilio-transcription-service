@@ -34,35 +34,8 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
     const stream = Readable.from(message);
     generateNewTranscription(stream);
-
-    // const msg = JSON.parse(message);
-    // switch (msg.event) {
-    //   case 'connected':
-    //     console.log(`A new call has connected.`);
-    //     break;
-    //   case 'start':
-    //     console.log(`Starting Media Stream ${msg.streamSid}`);
-    //     break;
-    //   case 'media':
-    //     console.log(`Receiving Audio...`)
-    //     break;
-    //   case 'stop':
-    //     console.log(`Call Has Ended`);
-    //     break;
-    //   default:
-    //     break;
-    // }
   });
 });
-
-// ws.on('open', function open() {
-//   ws.send('something');
-// });
-
-// ws.on('message', function incoming(message) {
-//   console.log('received: %s', message);
-// });
-
 
 // App routes
 app.get('/', (req, res) => {
